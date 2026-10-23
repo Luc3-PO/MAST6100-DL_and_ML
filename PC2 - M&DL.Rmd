@@ -1,0 +1,830 @@
+---
+title: "MAST6100 - Computing Session Week 3"
+output: html_notebook
+---
+# Wells in Bangladesh Data
+
+Load the data:
+
+```{r}
+wells <- read.csv("wells.csv", header = TRUE)
+```
+
+## Explore the Response Variable
+
+### Frequency Table
+0 - don't switch wells
+1 - do switch wells
+
+```{r}
+table(wells$switch)
+```
+
+### Proportions
+
+```{r}
+library(janitor)
+
+tabyl(wells, switch)
+```
+42% don't, 58% do
+---
+
+## Logistic Regression with Distance
+
+Fit a logistic regression model with:
+
+- Response: `switch`
+- Predictor: `dist`
+
+As before, R will automatically include an intercept term (β0), and the names of the variables in the dataframe are used in the regression equation.
+
+• The second argument family tells which family of GLM’s you want to use. For logistic model, you will
+always use family = binomial.
+• The third argument data tells R which data frame to use.
+
+The output of the lm function is stored in the object fit_wells. You can get the summary of the model
+```{r}
+fit_wells <- glm(
+  switch ~ dist,
+  family = binomial,
+  data = wells
+)
+
+summary(fit_wells)
+```
+Distance negatively impacts the probability of switching
+
+### Model Equation
+
+Write the model in the form
+
+\[
+\log\left(\frac{\pi}{1-\pi}\right)
+=
+\beta_0+\beta_1(dist)
+\]
+
+---
+
+### Question
+
+According to this summary, is the effect of distance of a safe is significant to explain the probability of switching to a new well? 
+Yes, as the p-value for this variable is less than 0.05.
+
+---
+
+## Logistic Regression with Arsenic
+Do the same analysis using the variable arsenic. We can fit the model with the following command
+
+```{r}
+fit_wells2 <- glm(
+  switch ~ arsenic,
+  family = binomial,
+  data = wells
+)
+
+summary(fit_wells2)
+```
+
+### Question
+
+As the summary suggest, arsenic is also important to explain the probability of switching to a new well (p<0.05)
+
+---
+
+# Titanic Data
+
+Load the data:
+You have a variable survived that is equal to 1 if the person survived and 0 otherwise
+
+```{r}
+titanic <- read.csv("titanic.csv")
+```
+
+## Question 1
+
+Create a contingency table for:
+
+- Sex
+- Survival (0 - no, 1 - yes)
+
+ The table can created with the following command
+```{r}
+table(titanic$sex, titanic$survived)
+```
+
+### Survival Proportions by Sex
+Based on this table, answer whether you expect that the probability of surviving given that you were a male is higher or lower than the probability of surviving given that you were a female. Explain why.
+
+The probability of females should be higher as the proportion of females who survived the accident is much higher than the proportion of males. We can check with the following command
+
+```{r}
+prop.table(
+  table(titanic$sex, titanic$survived),
+  1
+)
+```
+## Question 2
+
+Repeat the analysis for Age.
+
+### Survival Proportions by Age
+We can check the proportion of adults and children who survived in the following way.
+
+```{r}
+prop.table(
+  table(titanic$age, titanic$survived),
+  1
+)
+```
+Based on this table, we can answer that the probability of surviving is much higher for children
+---
+
+## Question 3
+
+Fit a logistic regression model using Sex as the explanatory variable.
+We can fit the model with the following command.
+
+```{r}
+titanic_model1 <- glm(
+  survived ~ sex,
+  data = titanic
+)
+
+summary(titanic_model1)
+```
+
+### Odds Ratio
+
+```{r}
+exp(coef(titanic_model1))
+```
+
+Does this model matches your initial analysis of the association between sex and probability of surviving the accident.
+
+Yes, by the output of the model we can see that the effect of sex is negative, when the reference is female, i.e.,the odds ratio of males surviving the accident is exp(−0.51990) = 0.59 times the odds of females surviving.
+
+---
+
+## Question 4
+
+Fit a logistic regression model using Age as the explanatory variable.
+We can fit the model with the following command:
+
+```{r}
+titanic_model2 <- glm(
+  survived ~ age,
+  data = titanic
+)
+
+summary(titanic_model2)
+```
+
+### Odds Ratio
+
+```{r}
+exp(coef(titanic_model2))
+```
+Does this model matches your initial analysis of the association between age and probability of surviving the accident.
+Yes, by the output of the model we can see that the effect of age is negative, when the reference is adult, i.e.,the odds ratio of children surviving the accident is exp(0.21032) = 1.23 times the odds of adults surviving
+
+---
+
+# Price in Restaurants
+
+Load the data:
+
+```{r}
+nyc <- read.csv("nyc.csv")
+```
+
+## Question 1
+
+Create a binary variable that equals:
+
+- 1 if Price > 40
+- 0 otherwise
+
+```{r}
+nyc$price_binary <- ifelse(
+  nyc$Price > 40,
+  1,
+  0
+)
+```
+
+### Frequency Table
+
+```{r}
+table(nyc$price_binary)
+```
+
+We can see that there are 72 restaurants with prices less than £40 and 96 restaurants with prices more than £40.
+
+---
+
+## Question 2
+
+Investigate whether Food, Decor and Service may explain the probability that a restaurant costs more than $40.
+We can create the plots with the following commands.
+
+### Food
+
+```{r}
+library(ggplot2)
+
+ggplot(nyc) +
+  theme_minimal() +
+  geom_boxplot(
+    aes(
+      y = Food,
+      x = factor(price_binary)
+    )
+  )
+```
+
+---
+
+### Decor
+
+```{r}
+ggplot(nyc) +
+  theme_minimal() +
+  geom_boxplot(
+    aes(
+      y = Decor,
+      x = factor(price_binary)
+    )
+  )
+```
+
+---
+
+### Service
+
+```{r}
+ggplot(nyc) +
+  theme_minimal() +
+  geom_boxplot(
+    aes(
+      y = Service,
+      x = factor(price_binary)
+    )
+  )
+```
+
+Make this plot for variables Food, Decor and Service. What do these plots show?
+All the three plots show that increasing the rates of either Food, Decor and Service should increase the probability of observing a restaurant with price over $40.
+
+---
+
+## Question 3
+
+Fit logistic regression models with `price_binary` as the response.
+
+### (i) Food as Predictor
+
+```{r}
+model_nyc1 <- glm(
+  price_binary ~ Food,
+  data = nyc,
+  family = binomial
+)
+
+summary(model_nyc1)
+```
+
+### Model Equation
+
+Write the fitted equation:
+
+\[
+\log\left(\frac{\pi}{1-\pi}\right)
+=
+\beta_0+\beta_1(Food)
+\]
+
+---
+
+### Predicted Probability when Food = 22
+ What is the probability of a restaurant having its price higher than $40 when the rating of Food is equal to 22?
+
+```{r}
+predict(
+  model_nyc1,
+  newdata = data.frame(Food = 22),
+  type = "response"
+)
+```
+
+Alternatively:
+
+```{r}
+exp(-14.24 + 0.71*22) /
+(1 + exp(-14.24 + 0.71*22))
+```
+
+---
+
+### (ii) Decor as Predictor
+
+With Decor as your explanatory variable. Write your obtained regression equation
+
+```{r}
+model_nyc2 <- glm(
+  price_binary ~ Decor,
+  data = nyc,
+  family = binomial
+)
+
+summary(model_nyc2)
+```
+
+### Model Equation
+
+Write the fitted equation:
+
+\[
+\log\left(\frac{\pi}{1-\pi}\right)
+=
+\beta_0+\beta_1(Decor)
+\]
+
+---
+
+### Predicted Probability when Decor = 22
+
+```{r}
+predict(
+  model_nyc2,
+  newdata = data.frame(Decor = 22),
+  type = "response"
+)
+```
+
+Alternatively:
+
+```{r}
+exp(-12.19 + 0.71*22) /
+(1 + exp(-12.19 + 0.71*22))
+```
+
+Interpret the probability.
+
+# Wells in Bangladesh Data
+
+Load the data:
+
+```{r}
+wells <- read.csv("wells.csv", header = TRUE)
+```
+
+## Question 1
+
+Fit a logistic regression model with:
+
+- Response: `switch`
+- Predictors: `arsenic`, `dist`, `assoc`, `educ`
+
+```{r}
+fit_wells <- glm(
+  switch ~ dist + arsenic + assoc + educ,
+  family = binomial,
+  data = wells
+)
+
+summary(fit_wells)
+```
+
+### Write the Model Equation
+
+Use the coefficient estimates from the output to write:
+
+\[
+\log\left(\frac{\pi_i}{1-\pi_i}\right)
+=
+\beta_0 + \beta_1(dist) + \beta_2(arsenic) + \beta_3(assoc) + \beta_4(educ)
+\]
+
+---
+
+## Question 2
+
+Can we say that assoc is an important variable to explain the probability of switching to a new well? Explain why. 
+If we consider a significance level of 5%, then assoc should not be considered an important variable to explain the probability of switching to a new well. This is true because the p-value associated with this variable is larger than 5%
+
+---
+
+## Question 3
+
+What is the effect of education on the probabilities of switching to a new well? 
+If we increase the education level by one year, we estimate that the odds of switching to a new well is 1.04 times the odds of someone with 1 year less of educational level, when we consider all the other variables constant
+
+Use the estimated coefficient and odds ratio.
+
+```{r}
+exp(coef(fit_wells)["educ"])
+```
+---
+
+## Question 4
+
+ Similarly to linear models, we can use the predict function to obtain predictions from our models. We just need to use the argument type = 'response' in order to get the estimated probabilities. For instance,
+
+### Example
+
+```{r}
+model <- glm(
+  switch ~ arsenic + dist + assoc + educ,
+  data = wells,
+  family = binomial
+)
+
+predict(
+  model,
+  newdata = data.frame(
+    arsenic = 2,
+    dist = 50,
+    assoc = 1,
+    educ = 10
+  ),
+  type = "response"
+)
+```
+Find the estimated probability for:
+
+- arsenic = 2
+- dist = 150
+- assoc = 1
+- educ = 10
+
+```{r}
+predict(
+  model,
+  newdata = data.frame(
+    arsenic = 2,
+    dist = 150,
+    assoc = 1,
+    educ = 10
+  ),
+  type = "response"
+)
+```
+---
+
+# Titanic Data
+
+For this example, we are going to continue looking at data from the Titanic crash. You have a variable survived that is equal to 1 if the person survived and 0 otherwise
+
+```{r}
+titanic <- read.csv("titanic.csv")
+```
+
+## Question 1
+
+Fit a logistic regression model with survived as your response variable and all other variable as covariates. 
+We can fit the model with the following command
+
+```{r}
+model_titanic <- glm(
+  survived ~ .,
+  data = titanic,
+  family = binomial
+)
+
+summary(model_titanic)
+```
+
+### Write the Model Equation
+
+Use the coefficient estimates to write:
+
+\[
+\log\left(\frac{\pi}{1-\pi}\right)
+=
+\beta_0
++\beta_1(class2nd)
++\beta_2(class3rd)
++\beta_3(classCrew)
++\beta_4(sexMale)
++\beta_5(ageChild)
+\]
+
+---
+
+### Interpret the Variables
+
+Explain the effect of:
+
+ - The odds of surviving between someone in the 2nd class is 0.36 times the odds of surviving in the 1st.
+ - The odds of surviving between someone in the 3nd class is 0.17 times the odds of surviving in the 1st.
+ - The odds of surviving between someone being part of the Crew is 0.42 times the odds of surviving in the 1st.
+ - The odds of surviving between some male person is 0.09 times the odds of surviving being a female.
+ - The odds of surviving between some child is 2.89 times the odds of surviving being an adult.
+
+Useful code:
+
+```{r}
+exp(coef(model_titanic))
+```
+---
+
+## Question 2
+
+Compare the estimated probabilities of survival for the following passengers.
+
+### Female, Child, 1st Class
+
+```{r}
+predict(
+  model_titanic,
+  newdata = data.frame(
+    sex = "Female",
+    class = "1st",
+    age = "Child"
+  ),
+  type = "response"
+)
+```
+
+---
+
+### Male, Adult, 3rd Class
+
+```{r}
+predict(
+  model_titanic,
+  newdata = data.frame(
+    sex = "Male",
+    class = "3rd",
+    age = "Adult"
+  ),
+  type = "response"
+)
+```
+
+Female, 1st class children have a higher probability to survive than Male, 3rd class Adults. 0.95 vs 0.10
+
+---
+
+## All Possible Scenarios
+
+Create every combination of the predictor variables and calculate predicted probabilities.
+
+```{r}
+all_possible_scenarios <- expand.grid(
+  sex = c("Male", "Female"),
+  age = c("Child", "Adult"),
+  class = c("1st", "2nd", "3rd", "Crew")
+)
+
+all_possible_scenarios$prob <- predict(
+  model_titanic,
+  newdata = all_possible_scenarios,
+  type = "response"
+)
+
+all_possible_scenarios
+```
+
+---
+
+## Visualisation
+
+```{r}
+library(ggplot2)
+
+ggplot(all_possible_scenarios) +
+  geom_line(
+    aes(
+      x = sex,
+      y = prob,
+      colour = class,
+      group = class
+    )
+  ) +
+  facet_wrap(~ age) +
+  theme_bw()
+```
+Children > Adults
+Female > Male
+1st > 2nd > Crew > 3rd
+
+# 1. Wells in Bangladesh Data
+
+Load the data:
+
+```{r}
+wells <- read.csv("wells.csv", header = TRUE)
+library(hnp)
+library(MASS)
+```
+
+## Question 1
+
+Consider a logistic regression model with `switch` as the response variable.
+
+### (a) Predictor: dist
+We can fit the model with the following code
+
+```{r}
+model_dist <- glm(switch ~ dist,
+                  data = wells,
+                  family = binomial)
+
+hnp(model_dist)
+```
+---
+
+### (b) Predictor: arsenic
+
+```{r}
+model_arsenic <- glm(switch ~ arsenic,
+                     data = wells,
+                     family = binomial)
+
+hnp(model_arsenic)
+```
+---
+
+### (c) Predictors: dist and arsenic
+
+```{r}
+model_twovar <- glm(switch ~ dist + arsenic,
+                    data = wells,
+                    family = binomial)
+
+hnp(model_twovar)
+```
+---
+
+### (d) Predictors: dist, arsenic, assoc and educ
+
+```{r}
+model_fourvar <- glm(switch ~ dist + arsenic + assoc + educ,
+                     data = wells,
+                     family = binomial)
+
+hnp(model_fourvar)
+```
+---
+
+## Question 2
+
+Fit a logistic regression model with interactions between `assoc` and the other numerical variables.Use the function stepAIC to select the model with the lowest AIC. Comment the results. We need to load library MASS to use function stepAIC in order to use it first. Then we can fit the model and use the variable selection with the following codes:
+
+```{r}
+model_to_varselection <- glm(
+  switch ~ assoc * (dist + arsenic + educ),
+  data = wells,
+  family = binomial
+)
+
+best_model <- stepAIC(
+  model_to_varselection,
+  direction = "both"
+)
+
+summary(best_model)
+```
+---
+
+### Removing Non-Significant Terms
+
+The model chosen includes an interaction with nonsignificant results. We can exclude that variable manually.
+
+```{r}
+best_model2 <- glm(
+  switch ~ assoc + dist + arsenic + educ,
+  data = wells,
+  family = binomial
+)
+
+summary(best_model2)
+```
+And again we still have one variable that it is not significant, so we can remove that variable manually as well.
+
+```{r}
+best_model3 <- glm(
+  switch ~ dist + arsenic + educ,
+  data = wells,
+  family = binomial
+)
+
+summary(best_model3)
+```
+---
+
+### (a) Interpret the best model
+
+```{r}
+summary(best_model)
+```
+
+We can interpret this model in the following way:
+
+• When the householder was a member of an association in the community the odds ratio of switching to a new well is 0.87 when increasing the arsenic level on one unit. Although this effect should be treated with care, as this coefficient is deemed not significant based on the obtained p-value.
+
+• When the householder was not a member of an association in the community the odds ratio of switching to a new well is 1.69 when increasing the arsenic level on one unit.
+
+• Years of education have a positive effect on the probability of switching to a new well. The odds ratio is equal to 1.04 of switching to a new well when you increase years of education in one unit.
+
+• Distance has a negative effect on the probability of switching. The odds of switching is 0.99 times the odds of not switching when you increase one unit of distance.
+
+• Being part of an association has a positive effect in the probability of switching to a new well, although this coefficient is not statistically significant. The odds ratio is equal to 1.08 when you compare households part of an association with those who are not part of an association.
+
+---
+
+### (b) Predict a probability
+
+Consider the model chosen in the previous item and predict the probability for someone who lives in a household 100m distant to the safest well, with arsenic level equal to 2 in their own well, not active in community organisations and with 8 years of education. We can obtain our model predictions with the following code
+
+```{r}
+predict(
+  best_model,
+  newdata = data.frame(
+    dist = 100,
+    arsenic = 2,
+    assoc = 0,
+    educ = 8
+  ),
+  type = "response"
+)
+```
+
+---
+
+# 2. Price in Restaurants
+
+In this example, we will consider the data set about prices in restaurants in New York, that we have used before, with the binary variable that we created before.
+
+```{r}
+nyc <- read.csv("nyc.csv")
+
+nyc$price_binary <- ifelse(nyc$Price > 40, 1, 0)
+```
+
+## Question 1
+
+Fit logistic regression models with `price_binary` as the response.
+
+### (a) Predictor: Food
+
+```{r}
+model_food <- glm(
+  price_binary ~ Food,
+  data = nyc,
+  family = binomial
+)
+
+hnp(model_food)
+```
+Some residuals are outside the envelope bands, so this model does not seem to fit the data perfectly.
+
+---
+
+### (b) Predictor: Service
+
+```{r}
+model_service <- glm(
+  price_binary ~ Service,
+  data = nyc,
+  family = binomial
+)
+
+hnp(model_service)
+```
+For this model, all points are inside the envelope bands, so we could say this model fits the data well.
+
+---
+
+### (c) Predictor: Decor
+
+```{r}
+model_decor <- glm(
+  price_binary ~ Decor,
+  data = nyc,
+  family = binomial
+)
+
+hnp(model_decor)
+```
+Some residuals are outside the envelope bands, so this model does not seem to fit the data perfectly.
+
+---
+
+## Question 2
+
+Use `stepAIC` to select the model with the lowest AIC.
+
+```{r}
+model_all <- glm(
+  price_binary ~ Food + Decor + Service,
+  data = nyc,
+  family = binomial
+)
+
+stepAIC(model_all)
+```
+The function stepAIC has removed variable Service in the first step and has chosen the model with variables Food and Decor as the final model
