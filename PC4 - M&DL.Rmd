@@ -1,0 +1,210 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+```{r}
+install.packages("ISLR2")
+```
+
+```{r}
+# Load data
+library(ISLR2)
+
+# Set random seed for reproducibility
+set.seed(1)
+
+# Randomly select 196 observations for the training set
+train <- sample(392, 196)
+
+# Fit a linear regression model
+lm.fit <- lm(mpg ~ horsepower, data = Auto, subset = train)
+
+# Calculate validation set MSE
+attach(Auto)
+mean((mpg - predict(lm.fit, Auto))[-train]^2)
+
+# Fit a quadratic regression model
+lm.fit2 <- lm(mpg ~ poly(horsepower, 2),
+              data = Auto,
+              subset = train)
+
+# Validation MSE for quadratic model
+mean((mpg - predict(lm.fit2, Auto))[-train]^2)
+
+# Fit a cubic regression model
+lm.fit3 <- lm(mpg ~ poly(horsepower, 3),
+              data = Auto,
+              subset = train)
+
+# Validation MSE for cubic model
+mean((mpg - predict(lm.fit3, Auto))[-train]^2)
+```
+
+```{r}
+# Create a different training/validation split
+set.seed(2)
+train <- sample(392, 196)
+
+# Linear model
+lm.fit <- lm(mpg ~ horsepower, subset = train)
+mean((mpg - predict(lm.fit, Auto))[-train]^2)
+
+# Quadratic model
+lm.fit2 <- lm(mpg ~ poly(horsepower, 2),
+              data = Auto,
+              subset = train)
+mean((mpg - predict(lm.fit2, Auto))[-train]^2)
+
+# Cubic model
+lm.fit3 <- lm(mpg ~ poly(horsepower, 3),
+              data = Auto,
+              subset = train)
+mean((mpg - predict(lm.fit3, Auto))[-train]^2)
+```
+
+```{r}
+# Fit linear regression using glm()
+glm.fit <- glm(mpg ~ horsepower, data = Auto)
+
+# View coefficients
+coef(glm.fit)
+
+# Compare with lm()
+lm.fit <- lm(mpg ~ horsepower, data = Auto)
+coef(lm.fit)
+
+# Load boot package
+library(boot)
+
+# Perform LOOCV
+glm.fit <- glm(mpg ~ horsepower, data = Auto)
+
+cv.err <- cv.glm(Auto, glm.fit)
+
+# Display CV estimate
+cv.err$delta
+```
+```{r}
+set.seed(17)
+# Create vector to store CV errors
+cv.error <- rep(0, 10)
+
+# Fit polynomials of degree 1 to 10
+for (i in 1:10) {
+
+  glm.fit <- glm(mpg ~ poly(horsepower, i),
+                 data = Auto)
+
+  cv.error[i] <- cv.glm(Auto, glm.fit)$delta[1]
+}
+
+# Display LOOCV errors
+cv.error
+```
+```{r}
+# Set seed for reproducibility
+set.seed(17)
+
+# Store CV errors
+cv.error.10 <- rep(0, 10)
+
+# Perform 10-fold CV for polynomial models
+for (i in 1:10) {
+
+  glm.fit <- glm(mpg ~ poly(horsepower, i),
+                 data = Auto)
+
+  cv.error.10[i] <- cv.glm(Auto,
+                           glm.fit,
+                           K = 10)$delta[1]
+}
+
+# Display CV errors
+cv.error.10
+```
+```{r}
+# Function to estimate alpha
+alpha.fn <- function(data, index) {
+
+  X <- data$X[index]
+  Y <- data$Y[index]
+
+  (var(Y) - cov(X, Y)) /
+    (var(X) + var(Y) - 2 * cov(X, Y))
+}
+
+# Estimate alpha using all observations
+alpha.fn(Portfolio, 1:100)
+
+# Bootstrap sample
+set.seed(7)
+
+alpha.fn(
+  Portfolio,
+  sample(100, 100, replace = TRUE)
+)
+```
+```{r}
+# Generate 1000 bootstrap samples
+boot(Portfolio,
+     alpha.fn,
+     R = 1000)
+# Function returning intercept and slope
+boot.fn <- function(data, index)
+  coef(
+    lm(mpg ~ horsepower,
+       data = data,
+       subset = index)
+  )
+
+# Apply to full dataset
+boot.fn(Auto, 1:392)
+```
+
+
+```{r}
+set.seed(1)
+
+boot.fn(
+  Auto,
+  sample(392, 392, replace = TRUE)
+)
+
+boot.fn(
+  Auto,
+  sample(392, 392, replace = TRUE)
+)
+# Estimate coefficient variability using 1000 bootstrap samples
+boot(Auto,
+     boot.fn,
+     1000)
+# Standard errors from ordinary least squares
+summary(
+  lm(mpg ~ horsepower,
+     data = Auto)
+)$coef
+# Function returning coefficients from quadratic model
+boot.fn <- function(data, index)
+  coef(
+    lm(mpg ~ horsepower + I(horsepower^2),
+       data = data,
+       subset = index)
+  )
+
+# Bootstrap coefficient estimates
+set.seed(1)
+
+boot(Auto,
+     boot.fn,
+     1000)
+summary(
+  lm(mpg ~ horsepower + I(horsepower^2),
+     data = Auto)
+)$coef
+```
+
+
+
+
+
+
